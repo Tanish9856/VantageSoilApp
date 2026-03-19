@@ -1,0 +1,91 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up – Vantage Soil Scan</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="logo-box">
+        <img src="{% static 'images/logo.png' %}" alt="Logo" class="header-logo"/>
+      </div>
+      <h1>Vantage Soil<br/>Scan</h1>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="auth-body">
+    <div class="welcome-text">
+      <h2>Hi !<br/>Welcome</h2>
+      <p>Im waiting for you, please enter your detail</p>
+    </div>
+
+    <div class="content-row">
+      <div class="bubble">India's First AI Powered Soil Scan App</div>
+
+      <div class="card-green">
+        <div class="card-logo">
+          <div class="logo-bg-solid">
+            <img src="{% static 'images/logo.png' %}" alt="Logo" class="card-logo-img"/>
+          </div>
+        </div>
+
+        {% if messages %}
+          {% for message in messages %}
+            <p style="color:#ffcccc; font-size:12px; margin-bottom:8px;">{{ message }}</p>
+          {% endfor %}
+        {% endif %}
+
+        <form method="POST" action="/signup/">
+          {% csrf_token %}
+
+          <div class="input-wrap">
+            <input type="text" name="name" placeholder="Full Name" required/>
+          </div>
+
+          <div class="input-wrap">
+            <input type="email" name="email" placeholder="Email Address" required/>
+          </div>
+
+          <div class="input-wrap">
+            <input type="tel" name="mobile" placeholder="Mobile No." required/>
+          </div>
+
+          <div class="input-wrap">
+            <input type="text" name="city" placeholder="City" required/>
+          </div>
+
+          <div class="input-wrap">
+            <input type="password" name="password" id="pwd" placeholder="Password" required/>
+            <span class="eye-icon" onclick="togglePwd('pwd')">👁</span>
+          </div>
+
+          <div class="input-wrap">
+            <input type="password" name="confirm_password" id="cpwd" placeholder="Confirm Password" required/>
+            <span class="eye-icon" onclick="togglePwd('cpwd')">👁</span>
+          </div>
+
+          <button type="submit" class="btn-dark">Sign Up</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="auth-footer">
+      Already have an account ? <a href="/login/">Login</a>
+    </div>
+  </div>
+
+  <script>
+    function togglePwd(id) {
+      const el = document.getElementById(id);
+      el.type = el.type === 'password' ? 'text' : 'password';
+    }
+  </script>
+</body>
+</html>

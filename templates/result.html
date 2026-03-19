@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Result – Vantage Soil Scan</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">vantage<br/>soil scan</div>
+      <div class="sidebar-logo">
+        <img src="{% static 'images/logo.png' %}" alt="Logo" class="header-logo"/>
+      </div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="/logout/">{{ request.user.first_name|default:request.user.username }}</a>
+      <a href="#">Subscription</a>
+      <a href="#">Setting</a>
+      <a href="#">A/C details</a>
+    </div>
+    <a href="/logout/" class="btn-logout" style="display:block; text-align:center; text-decoration:none;">LOGOUT</a>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <button class="hamburger" onclick="openSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="header-title">vantage soil scan</span>
+    <div class="logo-box">
+      <img src="{% static 'images/logo.png' %}" alt="Logo" class="header-logo"/>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="result-body">
+
+    <div class="result-logo-box">
+      <img src="{% static 'images/logo.png' %}" alt="Logo" class="home-big-logo"/>
+    </div>
+
+    <div class="result-label">Soil analysis result</div>
+
+    {% if soil_type %}
+    <div class="result-card" style="background:#66a635;">
+
+      {% if image %}
+        <img src="/media/{{ image }}" class="result-soil-img" alt="Soil Image">
+      {% else %}
+        <div class="result-soil-placeholder"></div>
+      {% endif %}
+
+      <div class="result-info" style="color:#ffffff;">
+        <p style="color:#ffffff; font-weight:700;"><b>{{ soil_type }}</b></p>
+        {% if soil_type != "non_soil" %}
+        <p style="color:#ffffff;">PH: {{ ph_value }}</p>
+        <p style="color:#ffffff;">Moisture: {{ moisture }}</p>
+        {% endif %}
+        {% if crop %}
+          <p>Recommended Crops:
+            {% for c in crop %}
+              {{ c }}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+          </p>
+        {% endif %}
+      </div>
+
+    </div>
+    {% else %}
+    <div class="result-card">
+      <div class="result-soil-placeholder"></div>
+      <div class="result-info">
+        <p>No result yet. Please upload a soil image.</p>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <a href="/" title="Home">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </a>
+    <a href="/history/" title="History">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    </a>
+    <a href="/about/" title="About">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    </a>
+  </div>
+
+  <script>
+    function openSidebar() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,277 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Home – Vantage Soil Scan</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    /* INSTRUCTIONS MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    .modal-box h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a5c2a;
+      margin-bottom: 16px;
+    }
+    .modal-box ol {
+      padding-left: 18px;
+      font-size: 13px;
+      color: #333;
+      line-height: 2;
+    }
+    .modal-close {
+      margin-top: 20px;
+      width: 100%;
+      background: #1a5c2a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+    }
+
+    /* CAMERA MODAL */
+    .camera-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 300;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+    .camera-modal-overlay.open {
+      display: flex;
+    }
+    #cameraVideo {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+    }
+    .camera-controls {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .btn-capture {
+      background: #7de8c8;
+      color: #111;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+    }
+    .btn-cancel-camera {
+      background: #e87d7d;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+    }
+    #cameraCanvas { display: none; }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">vantage<br/>soil scan</div>
+      <div class="sidebar-logo">
+        <img src="{% static 'images/logo.png' %}" alt="Logo" class="header-logo"/>
+      </div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="/logout/">{{ request.user.first_name|default:request.user.username }}</a>
+      <a href="#">Subscription</a>
+      <a href="#">Setting</a>
+      <a href="#">A/C details</a>
+    </div>
+    <a href="/logout/" class="btn-logout" style="display:block; text-align:center; text-decoration:none;">LOGOUT</a>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="header-title">vantage soil scan</span>
+    <div class="logo-box">
+      <img src="{% static 'images/logo.png' %}" alt="Logo" class="header-logo"/>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="home-body">
+    <div class="home-logo-box">
+      <img src="{% static 'images/logo.png' %}" alt="Vantage Soil Scan Logo" class="home-big-logo"/>
+    </div>
+
+    <!-- Upload photo -->
+    <button class="btn-teal" onclick="document.getElementById('fileInput').click()">Upload photo</button>
+    <form id="uploadForm" method="POST" action="/result/" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="file" id="fileInput" name="soil_image" accept="image/*" style="display:none" onchange="handleUpload(this)">
+    </form>
+
+    <!-- Camera form (submits captured image) -->
+    <form id="cameraForm" method="POST" action="/result/" enctype="multipart/form-data">
+      {% csrf_token %}
+      <input type="hidden" id="cameraImageInput" name="soil_image">
+    </form>
+
+    <button class="btn-teal" onclick="openCamera()">Open camera</button>
+    <button class="btn-teal" onclick="showInstructions()">Instructions</button>
+  </div>
+
+  <!-- INSTRUCTIONS MODAL -->
+  <div class="modal-overlay" id="instructionsModal">
+    <div class="modal-box">
+      <h3>📋 How to use</h3>
+      <ol>
+        <li>Take a clear photo of the soil sample</li>
+        <li>Ensure good lighting conditions</li>
+        <li>Make sure soil fills most of the frame</li>
+        <li>Upload using the "Upload photo" button or use "Open camera" to capture live</li>
+        <li>Wait a moment for AI to analyze the soil</li>
+        <li>View soil type, PH, moisture and recommended crops</li>
+      </ol>
+      <button class="modal-close" onclick="closeInstructions()">Got it!</button>
+    </div>
+  </div>
+
+  <!-- CAMERA MODAL -->
+  <div class="camera-modal-overlay" id="cameraModal">
+    <video id="cameraVideo" autoplay playsinline></video>
+    <canvas id="cameraCanvas"></canvas>
+    <div class="camera-controls">
+      <button class="btn-capture" onclick="capturePhoto()">📸 Capture</button>
+      <button class="btn-cancel-camera" onclick="closeCamera()">✕ Cancel</button>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <a href="/" class="active" title="Home">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </a>
+    <a href="/history/" title="History">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    </a>
+    <a href="/about/" title="About">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    </a>
+  </div>
+
+  <script>
+    // Sidebar
+    function openSidebar() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    }
+
+    // Upload
+    function handleUpload(input) {
+      if (input.files && input.files[0]) {
+        document.getElementById("uploadForm").submit();
+      }
+    }
+
+    // Instructions modal
+    function showInstructions() {
+      document.getElementById('instructionsModal').classList.add('open');
+    }
+    function closeInstructions() {
+      document.getElementById('instructionsModal').classList.remove('open');
+    }
+
+    // Camera
+    let stream = null;
+
+    function openCamera() {
+      const modal = document.getElementById('cameraModal');
+      const video = document.getElementById('cameraVideo');
+      modal.classList.add('open');
+
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(s => {
+          stream = s;
+          video.srcObject = s;
+        })
+        .catch(err => {
+          closeCamera();
+          alert('Camera not accessible. Please use "Upload photo" instead.');
+        });
+    }
+
+    function closeCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
+      }
+      document.getElementById('cameraModal').classList.remove('open');
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo');
+      const canvas = document.getElementById('cameraCanvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
+      canvas.toBlob(blob => {
+        const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+
+        // Create a real file input and submit
+        const form = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        fileInput.files = dt.files;
+
+        closeCamera();
+        form.submit();
+      }, 'image/jpeg', 0.9);
+    }
+  </script>
+</body>
+</html>

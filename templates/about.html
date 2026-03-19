@@ -1,0 +1,96 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About – Vantage Soil Scan</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+  <!-- SIDEBAR OVERLAY -->
+  <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">vantage<br/>soil scan</div>
+      <div class="sidebar-logo">
+        <img src="{% static 'images/logo.png'%}" alt="Logo" class="header-logo"/>
+      </div>
+    </div>
+    <div class="sidebar-menu">
+      <a href="/logout/">{{ request.user.first_name|default:request.user.username }}</a>
+      <a href="#">Subscription</a>
+      <a href="#">Setting</a>
+      <a href="#">A/C details</a>
+    </div>
+    <a href="/logout/" class="btn-logout" style="display:block; text-align:center; text-decoration:none;">LOGOUT</a>
+  </div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <button class="hamburger" onclick="openSidebar()">
+      <span></span><span></span><span></span>
+    </button>
+    <span class="header-title">vantage soil scan</span>
+    <div class="logo-box">
+      <img src="{% static 'images/logo.png'%}" alt="Logo" class="header-logo"/>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="about-body">
+    <h2 class="about-title">ABOUT THE APP</h2>
+
+    <p class="about-intro">
+      Soil Prediction is an intelligent application designed to analyze soil images and provide accurate soil type predictions using machine learning technology. The app helps farmers, students, and researchers understand soil characteristics quickly and efficiently without requiring complex laboratory testing.
+    </p>
+
+    <div class="about-section">
+      <h3>Our Purpose</h3>
+      <p>Our purpose is to simplify soil analysis by using modern technology and machine learning to provide quick and reliable soil predictions. We aim to help farmers, students, and researchers make informed agricultural decisions without the need for expensive laboratory testing.</p>
+    </div>
+
+    <div class="about-section">
+      <h3>Our Aim</h3>
+      <p>Our aim is to develop a smart and user-friendly soil prediction system that analyzes soil images and provides accurate soil classification and agricultural insights. The application is designed to assist users in identifying soil types, understanding soil characteristics, and selecting suitable crops efficiently.</p>
+    </div>
+
+    <div class="about-contact">
+      13/12, MALVIYA NAGAR, JAIPUR<br/>
+      M:NO. 9549017865
+    </div>
+
+    <button class="btn-privacy" onclick="showPrivacy()">PRIVACY AND DISCLAIMER</button>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <a href="/" title="Home">
+      <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </a>
+    <a href="/history/" title="History">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    </a>
+    <a href="/about/" class="active" title="About">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+    </a>
+  </div>
+
+  <script>
+    function openSidebar() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    }
+    function showPrivacy() {
+      alert('Privacy & Disclaimer:\n\nThis app is for educational and informational purposes only. Soil predictions are AI-based estimates and should not replace professional soil testing. Your data is not shared with third parties.');
+    }
+  </script>
+</body>
+</html>
