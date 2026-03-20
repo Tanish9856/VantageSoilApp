@@ -38,7 +38,17 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'soil',
+    'cloudinary_storage',
+    'cloudinary',
 ]
+
+import cloudinary
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dfr142qow'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '895433674935551'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'J_7cAdlbpS5gKDdQFy6UHGnP2dE'),
+}
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
