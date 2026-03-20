@@ -1,4 +1,3 @@
-import requests
 import numpy as np
 import joblib
 from PIL import Image
@@ -8,7 +7,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.core.files.storage import default_storage
+import os
+from django.conf import settings
 from soil.models import SoilScan, UserProfile
 
 # Load models
@@ -17,8 +17,8 @@ ph_model = joblib.load("model/ph_model.pkl")
 moisture_model = joblib.load("model/moisture_model.pkl")
 
 
-def preprocess_image(image_url):
-    img = Image.open(requests.get(image_url, stream=True).raw).convert("RGB")
+def preprocess_image(image_path):
+    img = Image.open(image_path).convert("RGB")
     img = img.resize((224, 224))
     img = np.array(img) / 255.0
     img = np.expand_dims(img, axis=0)
@@ -33,8 +33,8 @@ def predict_soil(image_path):
     return soil_type
 
 
-def predict_ph_moisture(image_url):
-    img = Image.open(requests.get(image_url, stream=True).raw).convert("RGB")
+def predict_ph_moisture(image_path):
+    img = Image.open(image_path).convert("RGB")
     img = img.resize((224, 224))
     img_array = np.array(img)
     r = np.mean(img_array[:, :, 0])
@@ -155,23 +155,36 @@ def result(request):
     crop = None
     image_name = None
 
-    if request.method == "POST":
-        image = request.FILES.get("soil_image")
-
-        if image:
-            # Save image using Django's storage (Cloudinary)
-            image_path = default_storage.save(f'soil_images/{image.name}', image)
-            image_url = default_storage.url(image_path)
-            image_name = image.name
-
-            soil_type = predict_soil(image_url)
-            ph_value, moisture = predict_ph_moisture(image_url)
+    if image:
+            # Save using Django storage (Cloudinary)
+            from django.core.files.storage import default_storage
+            from django.core.files.base import ContentFile
+            import tempfile
+            
+            # Save to Cloudinary
+            file_path = default_storage.save(f'soil_images/{image.name}', ContentFile(image.read()))
+            cloudinary_url = default_storage.url(file_path)
+            image_name = file_path
+            
+            # Save temp file locally for ML prediction
+            image.seek(0)
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
+                for chunk in image.chunks():
+                    tmp.write(chunk)
+                tmp_path = tmp.name
+            
+            # Use temp file for prediction
+            soil_type = predict_soil(tmp_path)
+            ph_value, moisture = predict_ph_moisture(tmp_path)
             crop = get_crop(soil_type)
+            
+            # Clean up temp file
+            os.unlink(tmp_path)
 
             SoilScan.objects.create(
                 user=request.user,
                 user_name=request.user.first_name or request.user.username,
-                image=image,
+                image=image.name,
                 soil_type=soil_type,
                 ph_value=ph_value,
                 moisture=str(moisture),
