@@ -70,18 +70,18 @@ def login_page(request):
     if request.user.is_authenticated:
         return redirect('/')
     if request.method == "POST":
-        email = request.POST.get("email")
+        mobile = request.POST.get("mobile")
         password = request.POST.get("password")
         try:
-            user_obj = User.objects.get(email=email)
-            user = authenticate(request, username=user_obj.username, password=password)
+            profile = UserProfile.objects.get(mobile=mobile)
+            user = authenticate(request, username=profile.user.username, password=password)
             if user:
                 login(request, user)
                 return redirect('/')
             else:
                 messages.error(request, "Incorrect password.")
-        except User.DoesNotExist:
-            messages.error(request, "No account found with this email.")
+        except UserProfile.DoesNotExist:
+            messages.error(request, "No account found with this phone number.")
     return render(request, 'login.html')
 
 
@@ -102,6 +102,10 @@ def signup(request):
 
         if User.objects.filter(email=email).exists():
             messages.error(request, "Email already registered.")
+            return render(request, 'signup.html')
+
+        if UserProfile.objects.filter(mobile=mobile).exists():
+            messages.error(request, "Mobile number already registered.")
             return render(request, 'signup.html')
 
         username = email.split("@")[0]
@@ -146,26 +150,22 @@ def result(request):
         image = request.FILES.get("soil_image")
 
         if image:
-            # Save to Cloudinary
             file_path = default_storage.save(
                 f'soil_images/{image.name}',
                 ContentFile(image.read())
             )
             image_name = file_path
 
-            # Save temp file for ML prediction
             image.seek(0)
             with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
                 for chunk in image.chunks():
                     tmp.write(chunk)
                 tmp_path = tmp.name
 
-            # Predict using temp file
             soil_type = predict_soil(tmp_path)
             ph_value, moisture = predict_ph_moisture(tmp_path)
             crop = get_crop(soil_type)
 
-            # Clean up temp file
             os.unlink(tmp_path)
 
             SoilScan.objects.create(
@@ -236,7 +236,7 @@ def about(request):
 
 def forgot_password(request):
     if request.method == "POST":
-        email = request.POST.get("email")
+        mobile = request.POST.get("mobile")
         new_password = request.POST.get("new_password")
         confirm_password = request.POST.get("confirm_password")
 
@@ -245,12 +245,13 @@ def forgot_password(request):
             return render(request, 'forgot_password.html')
 
         try:
-            user = User.objects.get(email=email)
+            profile = UserProfile.objects.get(mobile=mobile)
+            user = profile.user
             user.set_password(new_password)
             user.save()
             messages.success(request, "Password reset successful! Please login.")
             return redirect('/login/')
-        except User.DoesNotExist:
-            messages.error(request, "No account found with this email.")
+        except UserProfile.DoesNotExist:
+            messages.error(request, "No account found with this phone number.")
 
     return render(request, 'forgot_password.html')
