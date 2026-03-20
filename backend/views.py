@@ -7,6 +7,9 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
+import tempfile
 import os
 from django.conf import settings
 from soil.models import SoilScan, UserProfile
@@ -62,17 +65,13 @@ def get_crop(soil_type):
     return crop_map.get(soil_type, ["Rice"])
 
 
-# ─── AUTH VIEWS ───────────────────────────────────────────
-
+# AUTH VIEWS
 def login_page(request):
     if request.user.is_authenticated:
         return redirect('/')
-
     if request.method == "POST":
         email = request.POST.get("email")
         password = request.POST.get("password")
-
-        # Find user by email
         try:
             user_obj = User.objects.get(email=email)
             user = authenticate(request, username=user_obj.username, password=password)
@@ -83,14 +82,12 @@ def login_page(request):
                 messages.error(request, "Incorrect password.")
         except User.DoesNotExist:
             messages.error(request, "No account found with this email.")
-
     return render(request, 'login.html')
 
 
 def signup(request):
     if request.user.is_authenticated:
         return redirect('/')
-
     if request.method == "POST":
         name = request.POST.get("name")
         email = request.POST.get("email")
@@ -107,9 +104,7 @@ def signup(request):
             messages.error(request, "Email already registered.")
             return render(request, 'signup.html')
 
-        # Create user
         username = email.split("@")[0]
-        # Make username unique if needed
         base_username = username
         counter = 1
         while User.objects.filter(username=username).exists():
@@ -122,16 +117,9 @@ def signup(request):
             password=password,
             first_name=name,
         )
-
-        UserProfile.objects.create(
-            user=user,
-            mobile=mobile,
-            city=city,
-        )
-
+        UserProfile.objects.create(user=user, mobile=mobile, city=city)
         login(request, user)
         return redirect('/')
-
     return render(request, 'signup.html')
 
 
@@ -140,8 +128,7 @@ def logout_view(request):
     return redirect('/login/')
 
 
-# ─── MAIN VIEWS ───────────────────────────────────────────
-
+# MAIN VIEWS
 @login_required(login_url='/login/')
 def home(request):
     return render(request, 'home.html')
@@ -155,36 +142,36 @@ def result(request):
     crop = None
     image_name = None
 
-    if image:
-            # Save using Django storage (Cloudinary)
-            from django.core.files.storage import default_storage
-            from django.core.files.base import ContentFile
-            import tempfile
-            
+    if request.method == "POST":
+        image = request.FILES.get("soil_image")
+
+        if image:
             # Save to Cloudinary
-            file_path = default_storage.save(f'soil_images/{image.name}', ContentFile(image.read()))
-            cloudinary_url = default_storage.url(file_path)
+            file_path = default_storage.save(
+                f'soil_images/{image.name}',
+                ContentFile(image.read())
+            )
             image_name = file_path
-            
-            # Save temp file locally for ML prediction
+
+            # Save temp file for ML prediction
             image.seek(0)
             with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
                 for chunk in image.chunks():
                     tmp.write(chunk)
                 tmp_path = tmp.name
-            
-            # Use temp file for prediction
+
+            # Predict using temp file
             soil_type = predict_soil(tmp_path)
             ph_value, moisture = predict_ph_moisture(tmp_path)
             crop = get_crop(soil_type)
-            
+
             # Clean up temp file
             os.unlink(tmp_path)
 
             SoilScan.objects.create(
                 user=request.user,
                 user_name=request.user.first_name or request.user.username,
-                image=image.name,
+                image=file_path,
                 soil_type=soil_type,
                 ph_value=ph_value,
                 moisture=str(moisture),
