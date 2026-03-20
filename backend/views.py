@@ -7,8 +7,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-import os
-from django.conf import settings
+from django.core.files.storage import default_storage
 from soil.models import SoilScan, UserProfile
 
 # Load models
@@ -159,13 +158,8 @@ def result(request):
         image = request.FILES.get("soil_image")
 
         if image:
-            file_path = os.path.join(settings.MEDIA_ROOT, image.name)
-
-            with open(file_path, "wb+") as destination:
-                for chunk in image.chunks():
-                    destination.write(chunk)
-
-            image_path = file_path
+            # Save image using Django's storage (Cloudinary)
+            image_path = default_storage.save(f'soil_images/{image.name}', image)
             image_name = image.name
 
             soil_type = predict_soil(image_path)
@@ -175,7 +169,7 @@ def result(request):
             SoilScan.objects.create(
                 user=request.user,
                 user_name=request.user.first_name or request.user.username,
-                image=image.name,
+                image=image,
                 soil_type=soil_type,
                 ph_value=ph_value,
                 moisture=str(moisture),
