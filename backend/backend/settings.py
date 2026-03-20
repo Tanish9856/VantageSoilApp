@@ -51,7 +51,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CSRF_TRUSTED_ORIGINS = ['https://vantagesoilapp-production.up.railway.app']
+CSRF_TRUSTED_ORIGINS = [
+    'https://vantagesoilapp-production.up.railway.app',
+    'http://vantagesoilapp-production.up.railway.app',
+    'https://*.railway.app',
+    'http://*.railway.app',
+]
+CSRF_COOKIE_SECURE = False
 
 ROOT_URLCONF = 'backend.urls'
 
