@@ -44,3 +44,8 @@ staticfiles/
 
 # Environment variables
 .env
+
+dataset/
+media/
+*.h5
+*.pkl
