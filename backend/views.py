@@ -1,3 +1,4 @@
+import requests
 import numpy as np
 import joblib
 from PIL import Image
@@ -16,8 +17,8 @@ ph_model = joblib.load("model/ph_model.pkl")
 moisture_model = joblib.load("model/moisture_model.pkl")
 
 
-def preprocess_image(image_path):
-    img = Image.open(image_path).convert("RGB")
+def preprocess_image(image_url):
+    img = Image.open(requests.get(image_url, stream=True).raw).convert("RGB")
     img = img.resize((224, 224))
     img = np.array(img) / 255.0
     img = np.expand_dims(img, axis=0)
@@ -32,8 +33,8 @@ def predict_soil(image_path):
     return soil_type
 
 
-def predict_ph_moisture(image_path):
-    img = Image.open(image_path).convert("RGB")
+def predict_ph_moisture(image_url):
+    img = Image.open(requests.get(image_url, stream=True).raw).convert("RGB")
     img = img.resize((224, 224))
     img_array = np.array(img)
     r = np.mean(img_array[:, :, 0])
@@ -160,10 +161,11 @@ def result(request):
         if image:
             # Save image using Django's storage (Cloudinary)
             image_path = default_storage.save(f'soil_images/{image.name}', image)
+            image_url = default_storage.url(image_path)
             image_name = image.name
 
-            soil_type = predict_soil(image_path)
-            ph_value, moisture = predict_ph_moisture(image_path)
+            soil_type = predict_soil(image_url)
+            ph_value, moisture = predict_ph_moisture(image_url)
             crop = get_crop(soil_type)
 
             SoilScan.objects.create(
