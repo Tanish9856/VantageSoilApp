@@ -183,7 +183,7 @@ def result(request):
         "ph_value": ph_value,
         "moisture": moisture,
         "crop": crop,
-        "image": image_name,
+        "image_url": image_name,  # Pass the full Cloudinary URL
     })
 
 

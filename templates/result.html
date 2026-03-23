@@ -52,8 +52,8 @@
     {% if soil_type %}
     <div class="result-card" style="background:#66a635;">
 
-      {% if image %}
-        <img src="{{ image.url }}" class="result-soil-img" alt="Soil Image">
+      {% if image_url %}
+        <img src="{{ image_url }}" class="result-soil-img" alt="Soil Image">
       {% else %}
         <div class="result-soil-placeholder"></div>
       {% endif %}
