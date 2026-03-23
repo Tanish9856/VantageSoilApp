@@ -154,7 +154,7 @@ def result(request):
                 f'soil_images/{image.name}',
                 ContentFile(image.read())
             )
-            image_name = file_path
+            image_name = default_storage.url(file_path)
 
             image.seek(0)
             with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
