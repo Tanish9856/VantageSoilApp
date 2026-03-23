@@ -800,3 +800,12 @@ font-size:14px;
 .result-info {
   color: #111111 !important;
 }
+/* Fix for mobile bottom navigation overlap */
+.bottom-nav {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+  margin-bottom: 0;
+}
+
+body {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
