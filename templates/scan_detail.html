@@ -48,7 +48,7 @@
     <div class="result-card" style="background:#66a635;">
 
       {% if scan.image %}
-        <img src="{{ scan.image }}" class="result-soil-img" alt="Soil Image">
+        <img src="{{ scan.image.url }}" class="result-soil-img" alt="Soil Image">
       {% else %}
         <div class="result-soil-placeholder"></div>
       {% endif %}
