@@ -6,6 +6,48 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>About – Vantage Soil Scan</title>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    /* PRIVACY MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.open {
+      display: flex;
+    }
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 320px;
+      width: 90%;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    .modal-box h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a5c2a;
+      margin-bottom: 16px;
+    }
+    .modal-close {
+      margin-top: 20px;
+      width: 100%;
+      background: #1a5c2a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Poppins', sans-serif;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
 
@@ -79,6 +121,17 @@
     </a>
   </div>
 
+  <!-- PRIVACY MODAL -->
+  <div class="modal-overlay" id="privacyModal">
+    <div class="modal-box">
+      <h3>🔒 Privacy & Disclaimer</h3>
+      <p style="font-size: 13px; color: #333; line-height: 1.6;">
+        This app is for educational and informational purposes only. Soil predictions are AI-based estimates and should not replace professional soil testing. Your data is not shared with third parties.
+      </p>
+      <button class="modal-close" onclick="closePrivacy()">Got it!</button>
+    </div>
+  </div>
+
   <script>
     function openSidebar() {
       document.getElementById('sidebar').classList.add('open');
@@ -89,7 +142,10 @@
       document.getElementById('overlay').classList.remove('open');
     }
     function showPrivacy() {
-      alert('Privacy & Disclaimer:\n\nThis app is for educational and informational purposes only. Soil predictions are AI-based estimates and should not replace professional soil testing. Your data is not shared with third parties.');
+      document.getElementById('privacyModal').classList.add('open');
+    }
+    function closePrivacy() {
+      document.getElementById('privacyModal').classList.remove('open');
     }
   </script>
 </body>
