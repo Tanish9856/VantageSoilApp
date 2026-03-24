@@ -138,24 +138,24 @@ def home(request):
     return render(request, 'home.html')
 
 
+import cloudinary.uploader  # Add this import at the top
+
 @login_required(login_url='/login/')
 def result(request):
-    soil_type = None
-    ph_value = None
-    moisture = None
-    crop = None
-    image_name = None
-
+    # ... (keep your existing variables)
     if request.method == "POST":
         image = request.FILES.get("soil_image")
 
         if image:
-            file_path = default_storage.save(
-                f'soil_images/{image.name}',
-                ContentFile(image.read())
-            )
-            image_name = default_storage.url(file_path)
+            # 1. UPLOAD TO CLOUDINARY
+            # This sends the file directly to your Cloudinary dashboard
+            upload_result = cloudinary.uploader.upload(image, folder="soil_scans/")
+            
+            # 2. GET THE URL
+            # This is the permanent link to the image
+            image_url = upload_result.get("secure_url")
 
+            # --- Keep your processing logic ---
             image.seek(0)
             with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as tmp:
                 for chunk in image.chunks():
@@ -165,26 +165,28 @@ def result(request):
             soil_type = predict_soil(tmp_path)
             ph_value, moisture = predict_ph_moisture(tmp_path)
             crop = get_crop(soil_type)
-
             os.unlink(tmp_path)
+            # --- End processing logic ---
 
+            # 3. SAVE TO DATABASE
+            # Use the image_url from Cloudinary instead of the local file_path
             SoilScan.objects.create(
                 user=request.user,
                 user_name=request.user.first_name or request.user.username,
-                image=file_path,
+                image=image_url, # Store the full URL here
                 soil_type=soil_type,
                 ph_value=ph_value,
                 moisture=str(moisture),
                 crop=", ".join(crop),
             )
 
-    return render(request, "result.html", {
-        "soil_type": soil_type,
-        "ph_value": ph_value,
-        "moisture": moisture,
-        "crop": crop,
-        "image_url": image_name,  # Pass the full Cloudinary URL
-    })
+            return render(request, "result.html", {
+                "soil_type": soil_type,
+                "ph_value": ph_value,
+                "moisture": moisture,
+                "crop": crop,
+                "image_url": image_url, 
+            })
 
 
 @login_required(login_url='/login/')
