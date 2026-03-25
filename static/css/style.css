@@ -809,3 +809,15 @@ font-size:14px;
 body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+.modal-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 320px;
+      width: 90%;
+      /* ADD THESE THREE LINES */
+      max-height: 70vh; /* Limits box to 70% of screen height */
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
