@@ -6,7 +6,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Sign Up – Vantage Soil Scan</title>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <style>
+    .modal-overlay {
+      display: none; /* Stays hidden by default */
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7); /* Dims the background */
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.open { display: flex; } /* Shows the box when triggered */
+    .modal-box {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      width: 85%;
+      max-width: 400px;
+    }
+    function showPrivacy() {
+      document.getElementById('privacyModal').classList.add('open');
+    }
+    function closePrivacy() {
+      document.getElementById('privacyModal').classList.remove('open');
+    }
+  </style>
 </head>
+
+
+
 <body>
 
   <!-- HEADER -->
@@ -18,6 +46,8 @@
       <h1>Vantage Soil<br/>Scan</h1>
     </div>
   </div>
+
+  
 
   <!-- BODY -->
   <div class="auth-body">
@@ -94,5 +124,21 @@
       el.type = el.type === 'password' ? 'text' : 'password';
     }
   </script>
+
+  <div class="modal-overlay" id="privacyModal">
+    <div class="modal-box">
+      <h3>Terms & Conditions</h3>
+      <div class="modal-content" style="overflow-y: auto; max-height: 300px;">
+        <p style="font-size: 13px; color: #333; line-height: 1.6;">
+          • <b>Data Usage:</b> Your soil scans and GPS data help improve our AI models. <br>
+          • <b>Disclaimer:</b> Predictions are estimates; always consult a local expert for high-stakes farming. <br>
+          • <b>Liability:</b> The developer is not responsible for crop results based on app suggestions. <br>
+          • <b>Accuracy:</b> You must provide clear images for the most accurate results.
+        </p>
+      </div>
+      <button class="modal-close" onclick="closePrivacy()">Got it!</button>
+    </div>
+  </div>
+
 </body>
 </html>
