@@ -13,6 +13,7 @@ import tempfile
 import os
 from django.conf import settings
 from soil.models import SoilScan, UserProfile
+from django.utils import timezone
 
 # Load models
 soil_model = load_model("model/soil_model.h5", compile=False)
@@ -95,6 +96,11 @@ def signup(request):
         city = request.POST.get("city")
         password = request.POST.get("password")
         confirm_password = request.POST.get("confirm_password")
+        terms_agree = request.POST.get("terms_agree")
+
+        if not terms_agree:
+            messages.error(request, "Please accept the Terms and Conditions.")
+            return render(request, 'signup.html')
 
         if password != confirm_password:
             messages.error(request, "Passwords do not match.")
@@ -121,7 +127,12 @@ def signup(request):
             password=password,
             first_name=name,
         )
-        UserProfile.objects.create(user=user, mobile=mobile, city=city)
+        UserProfile.objects.create(
+            user=user, 
+            mobile=mobile, 
+            city=city,
+            terms_accepted_at=timezone.now() # This records the EXACT second they agreed
+        )
         login(request, user)
         return redirect('/')
     return render(request, 'signup.html')
