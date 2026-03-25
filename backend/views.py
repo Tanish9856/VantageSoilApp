@@ -242,7 +242,7 @@ def delete_result(request, id):
     return redirect("/history/")
 
 
-@login_required(login_url='/login/')
+
 def about(request):
     return render(request, 'about.html')
 

@@ -63,13 +63,20 @@
       </div>
     </div>
     <div class="sidebar-menu">
-      <a href="/logout/">{{ request.user.first_name|default:request.user.username }}</a>
-      <a href="#">Subscription</a>
-      <a href="#">Setting</a>
-      <a href="#">A/C details</a>
+      {% if user.is_authenticated %}
+        <a href="#">{{ request.user.first_name|default:request.user.username }}</a>
+        <a href="#">Subscription</a>
+        <a href="#">Setting</a>
+        <a href="#">A/C details</a>
+      {% else %}
+        <a href="/login/">Login</a>
+        <a href="/signup/">Sign Up</a>
+      {% endif %}
     </div>
-    <a href="/logout/" class="btn-logout" style="display:block; text-align:center; text-decoration:none;">LOGOUT</a>
-  </div>
+
+    {% if user.is_authenticated %}
+      <a href="/logout/" class="btn-logout" style="display:block; text-align:center; text-decoration:none;">LOGOUT</a>
+    {% endif %}
 
   <!-- HEADER -->
   <div class="header">
