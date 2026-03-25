@@ -1,3 +1,11 @@
+## 📱 App Preview
+<p align="center">
+  <img src="screenshots/1.jpeg" width="200" />
+  <img src="screenshots/2.jpeg" width="200" /> 
+  <img src="screenshots/3.jpeg" width="200" />
+  <img src="screenshots/4.jpeg" width="200" />
+</p>
+
 VantageSoilApp – Full-Stack Soil Analysis System
 VantageSoilApp is an end-to-end mobile and cloud solution designed for a Private Limited (Pvt Ltd) entity to identify soil types and provide real-time health metrics like moisture and pH levels. The system leverages Machine Learning to assist in agricultural decision-making and crop selection.
 
