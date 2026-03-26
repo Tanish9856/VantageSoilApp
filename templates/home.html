@@ -287,25 +287,32 @@
     function requestLocationAndUpload() {
       document.getElementById('locationModal').classList.remove('open');
 
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          function(position) {
-            // Success - got location
-            document.getElementById('lat_input').value = position.coords.latitude;
-            document.getElementById('long_input').value = position.coords.longitude;
-            document.getElementById('uploadForm').submit();
-          },
-          function(error) {
-            // User denied or error occurred
-            locationAsked = true;
-            document.getElementById('uploadForm').submit();
-          }
-        );
-      } else {
-        // Geolocation not supported
-        document.getElementById('uploadForm').submit();
+      function requestLocationAndUpload() {
+        // 1. Hide the modal
+        document.getElementById('locationModal').classList.remove('open');
+
+        if (navigator.geolocation) {
+          // 2. Ask the phone for GPS
+          navigator.geolocation.getCurrentPosition(
+            function(position) {
+              // 3. Success! Put the numbers in the hidden inputs
+              document.getElementById('lat_input').value = position.coords.latitude;
+              document.getElementById('long_input').value = position.coords.longitude;
+              
+              // 4. NOW submit the form
+              document.getElementById('uploadForm').submit();
+            },
+            function(error) {
+              // If user denies GPS, submit anyway (location will be empty)
+              console.warn("Location denied by user.");
+              document.getElementById('uploadForm').submit();
+            },
+            { enableHighAccuracy: true, timeout: 5000 } // Better accuracy for soil maps
+          );
+        } else {
+          document.getElementById('uploadForm').submit();
+        }
       }
-    }
 
     function uploadWithoutLocation() {
       document.getElementById('locationModal').classList.remove('open');
