@@ -22,6 +22,8 @@ class SoilScan(models.Model):
     crop = models.CharField(max_length=200)
     date = models.DateTimeField(auto_now_add=True)
     is_visible = models.BooleanField(default=True)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.soil_type} - {self.user_name}"
