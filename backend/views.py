@@ -191,8 +191,8 @@ def result(request):
                 ph_value=ph_value,
                 moisture=str(moisture),
                 crop=", ".join(crop),
-                latitude=lat,  # New data saved here
-                longitude=lon  # New data saved here
+                latitude = request.POST.get("latitude") or None
+                longitude = request.POST.get("longitude") or None
             )
 
             return render(request, "result.html", {
