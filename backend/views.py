@@ -153,11 +153,10 @@ import cloudinary.uploader  # Add this import at the top
 
 @login_required(login_url='/login/')
 def result(request):
-    # ... (keep your existing variables)
     if request.method == "POST":
         image = request.FILES.get("soil_image")
-        lat = request.POST.get("latitude") # New coordinate data
-        lon = request.POST.get("longitude") # New coordinate data
+        lat_val = request.POST.get("latitude", "") 
+        lon_val = request.POST.get("longitude", "")
 
         if image:
             # 1. UPLOAD TO CLOUDINARY
@@ -190,8 +189,9 @@ def result(request):
                 ph_value=ph_value,
                 moisture=str(moisture),
                 crop=", ".join(crop),
-                latitude=float(lat) if lat else None,  # Added comma and conversion
-                longitude=float(lon) if lon else None  # Added conversion
+                # Convert to float only if the string is not empty
+                latitude=float(lat_val) if lat_val else None,
+                longitude=float(lon_val) if lon_val else None
             )
 
             return render(request, "result.html", {
