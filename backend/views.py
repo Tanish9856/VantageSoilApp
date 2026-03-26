@@ -156,6 +156,8 @@ def result(request):
     # ... (keep your existing variables)
     if request.method == "POST":
         image = request.FILES.get("soil_image")
+        lat = request.POST.get("latitude") # New coordinate data
+        lon = request.POST.get("longitude") # New coordinate data
 
         if image:
             # 1. UPLOAD TO CLOUDINARY
@@ -189,6 +191,8 @@ def result(request):
                 ph_value=ph_value,
                 moisture=str(moisture),
                 crop=", ".join(crop),
+                latitude=lat,  # New data saved here
+                longitude=lon  # New data saved here
             )
 
             return render(request, "result.html", {

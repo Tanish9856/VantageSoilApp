@@ -147,6 +147,8 @@
     <form id="uploadForm" method="POST" action="/result/" enctype="multipart/form-data">
       {% csrf_token %}
       <input type="file" id="fileInput" name="soil_image" accept="image/*" style="display:none" onchange="handleUpload(this)">
+      <input type="hidden" name="latitude" id="lat_input">
+      <input type="hidden" name="longitude" id="long_input">
     </form>
 
     <!-- Camera form (submits captured image) -->
@@ -249,6 +251,23 @@
         stream = null;
       }
       document.getElementById('cameraModal').classList.remove('open');
+    }
+
+    function getLocationAndUpload() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                // Store coordinates in hidden input fields inside your form
+                document.getElementById('lat_input').value = position.coords.latitude;
+                document.getElementById('long_input').value = position.coords.longitude;
+                
+                // Now submit the form
+                document.getElementById('uploadForm').submit();
+            }, function(error) {
+                alert("Location is required for better crop recommendations. Please enable GPS.");
+            });
+        } else {
+            alert("Geolocation is not supported by this browser.");
+        }
     }
 
     function capturePhoto() {
