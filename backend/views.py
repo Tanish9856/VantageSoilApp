@@ -182,17 +182,16 @@ def result(request):
             # --- End processing logic ---
 
             # 3. SAVE TO DATABASE
-            # Use the image_url from Cloudinary instead of the local file_path
             SoilScan.objects.create(
                 user=request.user,
                 user_name=request.user.first_name or request.user.username,
-                image=image_url, # Store the full URL here
+                image=image_url, 
                 soil_type=soil_type,
                 ph_value=ph_value,
                 moisture=str(moisture),
                 crop=", ".join(crop),
-                latitude = request.POST.get("latitude") or None
-                longitude = request.POST.get("longitude") or None
+                latitude=float(lat) if lat else None,  # Added comma and conversion
+                longitude=float(lon) if lon else None  # Added conversion
             )
 
             return render(request, "result.html", {

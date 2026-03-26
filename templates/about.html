@@ -64,10 +64,9 @@
     </div>
     <div class="sidebar-menu">
       {% if user.is_authenticated %}
-        <a href="#">{{ request.user.first_name|default:request.user.username }}</a>
+        <a href="/logout/">{{ request.user.first_name|default:request.user.username }}</a>
         <a href="#">Subscription</a>
         <a href="#">Setting</a>
-        <a href="#">A/C details</a>
       {% else %}
         <a href="/login/">Login</a>
         <a href="/signup/">Sign Up</a>
