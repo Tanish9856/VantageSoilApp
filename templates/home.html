@@ -101,6 +101,10 @@
       cursor: pointer;
     }
     #cameraCanvas { display: none; }
+
+    .modal-box p {
+      margin: 0;
+    }
   </style>
 </head>
 <body>
@@ -159,6 +163,20 @@
 
     <button class="btn-teal" onclick="openCamera()">Open camera</button>
     <button class="btn-teal" onclick="showInstructions()">Instructions</button>
+  </div>
+
+  <!-- LOCATION PERMISSION MODAL -->
+  <div class="modal-overlay" id="locationModal">
+    <div class="modal-box">
+      <h3>📍 Enable Location?</h3>
+      <p style="font-size: 13px; color: #333; line-height: 1.6;">
+        Location helps us provide better crop recommendations based on your region. This is optional.
+      </p>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button class="modal-close" onclick="uploadWithoutLocation()" style="background: #999; flex: 1;">Skip</button>
+        <button class="modal-close" onclick="requestLocationAndUpload()" style="flex: 1;">Enable</button>
+      </div>
+    </div>
   </div>
 
   <!-- INSTRUCTIONS MODAL -->
@@ -253,21 +271,46 @@
       document.getElementById('cameraModal').classList.remove('open');
     }
 
+    let locationAsked = false;
+
     function getLocationAndUpload() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function(position) {
-                // Store coordinates in hidden input fields inside your form
-                document.getElementById('lat_input').value = position.coords.latitude;
-                document.getElementById('long_input').value = position.coords.longitude;
-                
-                // Now submit the form
-                document.getElementById('uploadForm').submit();
-            }, function(error) {
-                alert("Location is required for better crop recommendations. Please enable GPS.");
-            });
-        } else {
-            alert("Geolocation is not supported by this browser.");
-        }
+      // If location was already asked and denied, just upload
+      if (locationAsked) {
+        document.getElementById('uploadForm').submit();
+        return;
+      }
+
+      // Show the modal asking for location permission
+      document.getElementById('locationModal').classList.add('open');
+    }
+
+    function requestLocationAndUpload() {
+      document.getElementById('locationModal').classList.remove('open');
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            // Success - got location
+            document.getElementById('lat_input').value = position.coords.latitude;
+            document.getElementById('long_input').value = position.coords.longitude;
+            document.getElementById('uploadForm').submit();
+          },
+          function(error) {
+            // User denied or error occurred
+            locationAsked = true;
+            document.getElementById('uploadForm').submit();
+          }
+        );
+      } else {
+        // Geolocation not supported
+        document.getElementById('uploadForm').submit();
+      }
+    }
+
+    function uploadWithoutLocation() {
+      document.getElementById('locationModal').classList.remove('open');
+      locationAsked = true;
+      document.getElementById('uploadForm').submit();
     }
 
     function capturePhoto() {
