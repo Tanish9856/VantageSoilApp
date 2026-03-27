@@ -52,6 +52,7 @@
       font-family: 'Poppins', sans-serif;
       cursor: pointer;
     }
+
     .camera-modal-overlay {
       display: none;
       position: fixed;
@@ -155,6 +156,20 @@
     <button class="btn-teal" onclick="showInstructions()">Instructions</button>
   </div>
 
+  <!-- LOCATION PERMISSION MODAL -->
+  <div class="modal-overlay" id="locationModal">
+    <div class="modal-box">
+      <h3>📍 Enable Location?</h3>
+      <p style="font-size: 13px; color: #333; line-height: 1.6;">
+        Location helps us provide better crop recommendations based on your region. This is optional.
+      </p>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button class="modal-close" onclick="uploadWithoutLocation()" style="background: #999; flex: 1;">Skip</button>
+        <button class="modal-close" onclick="requestLocationAndUpload()" style="flex: 1;">Enable</button>
+      </div>
+    </div>
+  </div>
+
   <!-- INSTRUCTIONS MODAL -->
   <div class="modal-overlay" id="instructionsModal">
     <div class="modal-box">
@@ -195,6 +210,7 @@
   </div>
 
   <script>
+    // ─── State ───────────────────────────────────────────────
     let pendingForm = null;
     let stream = null;
 
@@ -220,29 +236,70 @@
     function handleUpload(input) {
       if (input.files && input.files[0]) {
         pendingForm = document.getElementById('uploadForm');
-        getLocationThenSubmit();
+        checkLocationAndProceed();
       }
     }
 
-    // ─── Core: try location silently, always submit after ─────
-    // No popup at all. If location is on → saves it. If off → submits without it.
-    function getLocationThenSubmit() {
+    // ─── KEY FIX: Check permission state before showing popup ─
+    function checkLocationAndProceed() {
       if (!navigator.geolocation) {
+        // Device doesn't support GPS at all — submit without location
         submitForm();
         return;
       }
 
+      if (navigator.permissions) {
+        // Modern browsers — check permission state silently
+        navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+          if (result.state === 'granted') {
+            // Location already enabled — get it silently, no popup
+            getLocationSilently();
+          } else if (result.state === 'denied') {
+            // Location permanently blocked — submit without it
+            submitForm();
+          } else {
+            // 'prompt' state — user hasn't decided yet, show our modal
+            document.getElementById('locationModal').classList.add('open');
+          }
+        });
+      } else {
+        // Older browser — fall back to showing the modal
+        document.getElementById('locationModal').classList.add('open');
+      }
+    }
+
+    // ─── Get location silently (already granted) ──────────────
+    function getLocationSilently() {
       navigator.geolocation.getCurrentPosition(
         function(position) {
-          // Location ON — got coordinates
           setLatLong(position.coords.latitude, position.coords.longitude);
           submitForm();
         },
         function(error) {
-          // Location OFF or denied — just submit without coordinates
+          // Failed silently — just submit without location
           submitForm();
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
+
+    // ─── Location modal buttons ───────────────────────────────
+    function uploadWithoutLocation() {
+      document.getElementById('locationModal').classList.remove('open');
+      submitForm();
+    }
+
+    function requestLocationAndUpload() {
+      document.getElementById('locationModal').classList.remove('open');
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          setLatLong(position.coords.latitude, position.coords.longitude);
+          submitForm();
+        },
+        function(error) {
+          submitForm();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
 
@@ -303,7 +360,7 @@
         document.getElementById('cameraImageInput').files = dt.files;
         closeCamera();
         pendingForm = document.getElementById('cameraForm');
-        getLocationThenSubmit();
+        checkLocationAndProceed();
       }, 'image/jpeg', 0.9);
     }
   </script>
