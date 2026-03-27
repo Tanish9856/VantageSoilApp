@@ -7,7 +7,6 @@
   <title>Home – Vantage Soil Scan</title>
   <link rel="stylesheet" href="{% static 'css/style.css' %}">
   <style>
-    /* INSTRUCTIONS MODAL */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -54,7 +53,6 @@
       cursor: pointer;
     }
 
-    /* CAMERA MODAL */
     .camera-modal-overlay {
       display: none;
       position: fixed;
@@ -101,18 +99,13 @@
       cursor: pointer;
     }
     #cameraCanvas { display: none; }
-
-    .modal-box p {
-      margin: 0;
-    }
+    .modal-box p { margin: 0; }
   </style>
 </head>
 <body>
 
-  <!-- SIDEBAR OVERLAY -->
   <div class="sidebar-overlay" id="overlay" onclick="closeSidebar()"></div>
 
-  <!-- SIDEBAR -->
   <div class="sidebar" id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-title">vantage<br/>soil scan</div>
@@ -129,7 +122,6 @@
     <a href="/logout/" class="btn-logout" style="display:block; text-align:center; text-decoration:none;">LOGOUT</a>
   </div>
 
-  <!-- HEADER -->
   <div class="header">
     <button class="hamburger" onclick="openSidebar()" aria-label="Menu">
       <span></span><span></span><span></span>
@@ -140,13 +132,11 @@
     </div>
   </div>
 
-  <!-- BODY -->
   <div class="home-body">
     <div class="home-logo-box">
       <img src="{% static 'images/logo.png' %}" alt="Vantage Soil Scan Logo" class="home-big-logo"/>
     </div>
 
-    <!-- Upload photo -->
     <button class="btn-teal" onclick="document.getElementById('fileInput').click()">Upload photo</button>
     <form id="uploadForm" method="POST" action="/result/" enctype="multipart/form-data">
       {% csrf_token %}
@@ -155,10 +145,11 @@
       <input type="hidden" name="longitude" id="long_input">
     </form>
 
-    <!-- Camera form (submits captured image) -->
     <form id="cameraForm" method="POST" action="/result/" enctype="multipart/form-data">
       {% csrf_token %}
-      <input type="hidden" id="cameraImageInput" name="soil_image">
+      <input type="file" id="cameraImageInput" name="soil_image" style="display:none">
+      <input type="hidden" name="latitude" id="cam_lat_input">
+      <input type="hidden" name="longitude" id="cam_long_input">
     </form>
 
     <button class="btn-teal" onclick="openCamera()">Open camera</button>
@@ -219,111 +210,125 @@
   </div>
 
   <script>
-      // Sidebar
-      function openSidebar() {
-        document.getElementById('sidebar').classList.add('open');
-        document.getElementById('overlay').classList.add('open');
-      }
-      function closeSidebar() {
-        document.getElementById('sidebar').classList.remove('open');
-        document.getElementById('overlay').classList.remove('open');
-      }
+    // ─── State ───────────────────────────────────────────────
+    let pendingForm = null;   // which form to submit after location decision
+    let stream = null;
 
-      // Instructions modal
-      function showInstructions() {
-        document.getElementById('instructionsModal').classList.add('open');
-      }
-      function closeInstructions() {
-        document.getElementById('instructionsModal').classList.remove('open');
-      }
+    // ─── Sidebar ─────────────────────────────────────────────
+    function openSidebar() {
+      document.getElementById('sidebar').classList.add('open');
+      document.getElementById('overlay').classList.add('open');
+    }
+    function closeSidebar() {
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('overlay').classList.remove('open');
+    }
 
-      // Camera Logic
-      let stream = null;
-      function openCamera() {
-        const modal = document.getElementById('cameraModal');
-        const video = document.getElementById('cameraVideo');
-        modal.classList.add('open');
+    // ─── Instructions ─────────────────────────────────────────
+    function showInstructions() {
+      document.getElementById('instructionsModal').classList.add('open');
+    }
+    function closeInstructions() {
+      document.getElementById('instructionsModal').classList.remove('open');
+    }
 
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-          .then(s => {
-            stream = s;
-            video.srcObject = s;
-          })
-          .catch(err => {
-            closeCamera();
-            alert('Camera not accessible.');
-          });
-      }
-
-      function closeCamera() {
-        if (stream) {
-          stream.getTracks().forEach(t => t.stop());
-          stream = null;
-        }
-        document.getElementById('cameraModal').classList.remove('open');
-      }
-
-      // Upload & Location Logic
-      let locationAsked = false;
-
-      function handleUpload(input) {
-        if (input.files && input.files[0]) {
-          getLocationAndUpload();
-        }
-      }
-
-      function getLocationAndUpload() {
-        if (locationAsked) {
-          document.getElementById('uploadForm').submit();
-          return;
-        }
+    // ─── Upload (file picker) ─────────────────────────────────
+    function handleUpload(input) {
+      if (input.files && input.files[0]) {
+        pendingForm = document.getElementById('uploadForm');
         document.getElementById('locationModal').classList.add('open');
       }
+    }
 
-      function requestLocationAndUpload() {
-        document.getElementById('locationModal').classList.remove('open');
-        locationAsked = true;
+    // ─── Location modal buttons ───────────────────────────────
+    function uploadWithoutLocation() {
+      document.getElementById('locationModal').classList.remove('open');
+      if (pendingForm) {
+        pendingForm.submit();
+        pendingForm = null;
+      }
+    }
 
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            function(position) {
+    function requestLocationAndUpload() {
+      document.getElementById('locationModal').classList.remove('open');
+
+      if (!navigator.geolocation) {
+        // Browser doesn't support geolocation — submit without it
+        if (pendingForm) { pendingForm.submit(); pendingForm = null; }
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          // ✅ Success — fill the right hidden fields then submit
+          if (pendingForm) {
+            if (pendingForm.id === 'uploadForm') {
               document.getElementById('lat_input').value = position.coords.latitude;
               document.getElementById('long_input').value = position.coords.longitude;
-              document.getElementById('uploadForm').submit();
-            },
-            function(error) {
-              document.getElementById('uploadForm').submit();
-            },
-            { enableHighAccuracy: true, timeout: 5000 }
-          );
-        } else {
-          document.getElementById('uploadForm').submit();
-        }
-      }
+            } else {
+              document.getElementById('cam_lat_input').value = position.coords.latitude;
+              document.getElementById('cam_long_input').value = position.coords.longitude;
+            }
+            pendingForm.submit();
+            pendingForm = null;
+          }
+        },
+        function(error) {
+          // ❌ Permission denied or timeout — submit without location
+          console.warn('Geolocation error:', error.message);
+          if (pendingForm) { pendingForm.submit(); pendingForm = null; }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+    }
 
-      function uploadWithoutLocation() {
-        document.getElementById('locationModal').classList.remove('open');
-        locationAsked = true;
-        document.getElementById('uploadForm').submit();
-      }
+    // ─── Camera ───────────────────────────────────────────────
+    function openCamera() {
+      const modal = document.getElementById('cameraModal');
+      const video = document.getElementById('cameraVideo');
+      modal.classList.add('open');
 
-      function capturePhoto() {
-        const video = document.getElementById('cameraVideo');
-        const canvas = document.getElementById('cameraCanvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video, 0, 0);
-
-        canvas.toBlob(blob => {
-          const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
-          const dt = new DataTransfer();
-          dt.items.add(file);
-          
-          document.getElementById('fileInput').files = dt.files;
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(s => {
+          stream = s;
+          video.srcObject = s;
+        })
+        .catch(() => {
           closeCamera();
-          getLocationAndUpload();
-        }, 'image/jpeg', 0.9);
+          alert('Camera not accessible.');
+        });
+    }
+
+    function closeCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+        stream = null;
       }
+      document.getElementById('cameraModal').classList.remove('open');
+    }
+
+    function capturePhoto() {
+      const video = document.getElementById('cameraVideo');
+      const canvas = document.getElementById('cameraCanvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+
+      canvas.toBlob(blob => {
+        const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
+        const dt = new DataTransfer();
+        dt.items.add(file);
+
+        // Put captured image into the camera form's file input
+        document.getElementById('cameraImageInput').files = dt.files;
+
+        closeCamera();
+
+        // Now ask for location — point pendingForm at cameraForm
+        pendingForm = document.getElementById('cameraForm');
+        document.getElementById('locationModal').classList.add('open');
+      }, 'image/jpeg', 0.9);
+    }
   </script>
 </body>
 </html>

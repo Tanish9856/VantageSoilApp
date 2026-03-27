@@ -5,6 +5,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.GeolocationPermissions;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -34,6 +35,21 @@ public class MainActivity extends AppCompatActivity {
     private ValueCallback<Uri[]> filePathCallback;
     private Uri cameraImageUri;
 
+    // ✅ ADDED: For handling location permission from WebView
+    private GeolocationPermissions.Callback geolocationCallback;
+    private String geolocationOrigin;
+
+    private final ActivityResultLauncher<String[]> locationPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), result -> {
+                boolean granted = Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_FINE_LOCATION))
+                        || Boolean.TRUE.equals(result.get(Manifest.permission.ACCESS_COARSE_LOCATION));
+                if (geolocationCallback != null) {
+                    geolocationCallback.invoke(geolocationOrigin, granted, false);
+                    geolocationCallback = null;
+                    geolocationOrigin = null;
+                }
+            });
+
     private final ActivityResultLauncher<Intent> fileChooserLauncher =
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
                 if (filePathCallback == null) return;
@@ -57,8 +73,8 @@ public class MainActivity extends AppCompatActivity {
         webView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progressBar);
 
-        // Request permissions
-        requestPermissions();
+        // Request permissions (camera + storage)
+        requestAppPermissions();
 
         // Setup WebView
         setupWebView();
@@ -67,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         webView.loadUrl("https://vantagesoilapp-production.up.railway.app");
     }
 
-    private void requestPermissions() {
+    private void requestAppPermissions() {
         String[] permissions = {
                 Manifest.permission.CAMERA,
                 Manifest.permission.READ_EXTERNAL_STORAGE,
@@ -88,6 +104,10 @@ public class MainActivity extends AppCompatActivity {
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
+        // ✅ ADDED: Enable geolocation in WebView settings
+        settings.setGeolocationEnabled(true);
+        settings.setGeolocationDatabasePath(getFilesDir().getPath());
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
@@ -107,6 +127,29 @@ public class MainActivity extends AppCompatActivity {
         });
 
         webView.setWebChromeClient(new WebChromeClient() {
+
+            // ✅ ADDED: This is the key fix — handles navigator.geolocation requests from the webpage
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, GeolocationPermissions.Callback callback) {
+                boolean fineLoc = ContextCompat.checkSelfPermission(MainActivity.this,
+                        Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+                boolean coarseLoc = ContextCompat.checkSelfPermission(MainActivity.this,
+                        Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+
+                if (fineLoc || coarseLoc) {
+                    // Android already has permission — grant it directly to the WebView
+                    callback.invoke(origin, true, false);
+                } else {
+                    // Need to ask the user for location permission
+                    geolocationCallback = callback;
+                    geolocationOrigin = origin;
+                    locationPermissionLauncher.launch(new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                    });
+                }
+            }
+
             @Override
             public void onPermissionRequest(PermissionRequest request) {
                 request.grant(request.getResources());
