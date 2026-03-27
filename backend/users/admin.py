@@ -50,10 +50,21 @@ admin.site.register(User, CustomUserAdmin)
 
 @admin.register(SoilScan)
 class SoilScanAdmin(admin.ModelAdmin):
+    # Shows in the list view
     list_display = ('user', 'soil_type', 'ph_value', 'moisture', 'date', 'open_in_maps')
     list_filter = ('soil_type', 'date')
     search_fields = ('user__username', 'soil_type')
+
+    # Shows in the detail/change view with proper sections
     readonly_fields = ('date', 'open_in_maps')
+    fieldsets = (
+        ('Scan Info', {
+            'fields': ('user', 'user_name', 'image', 'soil_type', 'ph_value', 'moisture', 'crop', 'is_visible', 'date')
+        }),
+        ('Location', {
+            'fields': ('latitude', 'longitude', 'open_in_maps'),
+        }),
+    )
 
     def open_in_maps(self, obj):
         if obj.latitude and obj.longitude:
@@ -65,5 +76,5 @@ class SoilScanAdmin(admin.ModelAdmin):
                 '📍 Open in Maps</a>',
                 url
             )
-        return "No location"
-    open_in_maps.short_description = 'Location'
+        return "No location saved"
+    open_in_maps.short_description = 'Open in Maps'
