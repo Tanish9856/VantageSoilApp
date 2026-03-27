@@ -211,7 +211,7 @@
 
   <script>
     // ─── State ───────────────────────────────────────────────
-    let pendingForm = null;   // which form to submit after location decision
+    let pendingForm = null;
     let stream = null;
 
     // ─── Sidebar ─────────────────────────────────────────────
@@ -236,50 +236,89 @@
     function handleUpload(input) {
       if (input.files && input.files[0]) {
         pendingForm = document.getElementById('uploadForm');
+        checkLocationAndProceed();
+      }
+    }
+
+    // ─── KEY FIX: Check permission state before showing popup ─
+    function checkLocationAndProceed() {
+      if (!navigator.geolocation) {
+        // Device doesn't support GPS at all — submit without location
+        submitForm();
+        return;
+      }
+
+      if (navigator.permissions) {
+        // Modern browsers — check permission state silently
+        navigator.permissions.query({ name: 'geolocation' }).then(function(result) {
+          if (result.state === 'granted') {
+            // Location already enabled — get it silently, no popup
+            getLocationSilently();
+          } else if (result.state === 'denied') {
+            // Location permanently blocked — submit without it
+            submitForm();
+          } else {
+            // 'prompt' state — user hasn't decided yet, show our modal
+            document.getElementById('locationModal').classList.add('open');
+          }
+        });
+      } else {
+        // Older browser — fall back to showing the modal
         document.getElementById('locationModal').classList.add('open');
       }
+    }
+
+    // ─── Get location silently (already granted) ──────────────
+    function getLocationSilently() {
+      navigator.geolocation.getCurrentPosition(
+        function(position) {
+          setLatLong(position.coords.latitude, position.coords.longitude);
+          submitForm();
+        },
+        function(error) {
+          // Failed silently — just submit without location
+          submitForm();
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
     }
 
     // ─── Location modal buttons ───────────────────────────────
     function uploadWithoutLocation() {
       document.getElementById('locationModal').classList.remove('open');
-      if (pendingForm) {
-        pendingForm.submit();
-        pendingForm = null;
-      }
+      submitForm();
     }
 
     function requestLocationAndUpload() {
       document.getElementById('locationModal').classList.remove('open');
-
-      if (!navigator.geolocation) {
-        // Browser doesn't support geolocation — submit without it
-        if (pendingForm) { pendingForm.submit(); pendingForm = null; }
-        return;
-      }
-
       navigator.geolocation.getCurrentPosition(
         function(position) {
-          // ✅ Success — fill the right hidden fields then submit
-          if (pendingForm) {
-            if (pendingForm.id === 'uploadForm') {
-              document.getElementById('lat_input').value = position.coords.latitude;
-              document.getElementById('long_input').value = position.coords.longitude;
-            } else {
-              document.getElementById('cam_lat_input').value = position.coords.latitude;
-              document.getElementById('cam_long_input').value = position.coords.longitude;
-            }
-            pendingForm.submit();
-            pendingForm = null;
-          }
+          setLatLong(position.coords.latitude, position.coords.longitude);
+          submitForm();
         },
         function(error) {
-          // ❌ Permission denied or timeout — submit without location
-          console.warn('Geolocation error:', error.message);
-          if (pendingForm) { pendingForm.submit(); pendingForm = null; }
+          submitForm();
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
+    }
+
+    // ─── Helpers ──────────────────────────────────────────────
+    function setLatLong(lat, lon) {
+      if (pendingForm && pendingForm.id === 'uploadForm') {
+        document.getElementById('lat_input').value = lat;
+        document.getElementById('long_input').value = lon;
+      } else {
+        document.getElementById('cam_lat_input').value = lat;
+        document.getElementById('cam_long_input').value = lon;
+      }
+    }
+
+    function submitForm() {
+      if (pendingForm) {
+        pendingForm.submit();
+        pendingForm = null;
+      }
     }
 
     // ─── Camera ───────────────────────────────────────────────
@@ -318,15 +357,10 @@
         const file = new File([blob], 'camera_capture.jpg', { type: 'image/jpeg' });
         const dt = new DataTransfer();
         dt.items.add(file);
-
-        // Put captured image into the camera form's file input
         document.getElementById('cameraImageInput').files = dt.files;
-
         closeCamera();
-
-        // Now ask for location — point pendingForm at cameraForm
         pendingForm = document.getElementById('cameraForm');
-        document.getElementById('locationModal').classList.add('open');
+        checkLocationAndProceed();
       }, 'image/jpeg', 0.9);
     }
   </script>
